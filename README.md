@@ -7,8 +7,8 @@ A personal, locally run tool that pulls your Chess.com and Lichess games, analyz
 | Step | What | State |
 | --- | --- | --- |
 | 1 | Fetch and store games from both sites | Done |
-| 2 | Basic stats page | Next |
-| 3 | Engine pass (Stockfish move labels, accuracy) | |
+| 2 | Basic stats page | Done |
+| 3 | Engine pass (Stockfish move labels, accuracy) | Next |
 | 4 | Top 3 weaknesses page | |
 
 ## Setup
@@ -36,6 +36,14 @@ python cli.py fetch lichess:<user>      # rapid games from Lichess
 python cli.py summary chesscom:<user>   # what's stored
 python cli.py moves tests/fixtures/sample.pgn   # print a PGN's moves
 ```
+
+Then open the dashboard:
+
+```bash
+streamlit run app.py
+```
+
+It's plain black-and-white text: your record, results by color, by opponent rating and by opening, and your rating by month. Pick a player and time control (rapid by default) in the sidebar. Set `DOWNCHESS_DB` to point it at a different database file.
 
 Run `fetch` again any time; it only downloads and stores new games. Flags:
 

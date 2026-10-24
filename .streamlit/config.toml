@@ -1,0 +1,14 @@
+# Plain black on white, monospace everywhere.
+[theme]
+base = "light"
+primaryColor = "#000000"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#000000"
+font = "monospace"
+
+[client]
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false
