@@ -8,8 +8,8 @@ A personal, locally run tool that pulls your Chess.com and Lichess games, analyz
 | --- | --- | --- |
 | 1 | Fetch and store games from both sites | Done |
 | 2 | Basic stats page | Done |
-| 3 | Engine pass (Stockfish move labels, accuracy) | Next |
-| 4 | Top 3 weaknesses page | |
+| 3 | Engine pass (Stockfish move labels, accuracy) | Done |
+| 4 | Top 3 weaknesses page | Next |
 
 ## Setup
 
@@ -20,6 +20,8 @@ python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
+
+Install Stockfish for the engine pass (macOS: `brew install stockfish`). If it's somewhere unusual, set `STOCKFISH_PATH`.
 
 Optional environment variables:
 
@@ -36,6 +38,16 @@ python cli.py fetch lichess:<user>      # rapid games from Lichess
 python cli.py summary chesscom:<user>   # what's stored
 python cli.py moves tests/fixtures/sample.pgn   # print a PGN's moves
 ```
+
+Then run Stockfish over your recent games:
+
+```bash
+python cli.py analyze chesscom:<user>                # latest 200 rapid games, depth 12
+python cli.py analyze chesscom:<user> --games 500    # go further back
+python cli.py analyze chesscom:<user> --depth 14     # re-analyse deeper
+```
+
+It uses one Stockfish process per CPU core. You can stop it with Ctrl+C at any time; finished games are saved and the next run continues where it left off. Lichess games that Lichess already analysed reuse that analysis instead of running the engine. Each move gets a label (ok, inaccuracy ≥ 50 cp, mistake ≥ 100, blunder ≥ 300), a phase (opening, middlegame, endgame), and an accuracy score using Lichess's formula. The first 8 plies are treated as opening theory and not judged.
 
 Then open the dashboard:
 

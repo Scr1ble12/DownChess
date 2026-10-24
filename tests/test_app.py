@@ -1,6 +1,7 @@
 # tests/test_app.py
 """Smoke test: the Streamlit page renders with and without data."""
 
+import sys
 from pathlib import Path
 
 from streamlit.testing.v1 import AppTest
@@ -13,6 +14,9 @@ APP = str(Path(__file__).resolve().parent.parent / "app.py")
 
 def run_app(db_path, monkeypatch):
     monkeypatch.setenv("DOWNCHESS_DB", str(db_path))
+    # AppTest swaps sys.modules["__main__"] for app.py. Put it back afterwards,
+    # or later multiprocessing tests spawn workers that re-run the Streamlit app.
+    monkeypatch.setitem(sys.modules, "__main__", sys.modules["__main__"])
     at = AppTest.from_file(APP, default_timeout=30)
     at.run()
     assert not at.exception

@@ -6,6 +6,8 @@
     python cli.py fetch chesscom:<user> --all-speeds   # include bullet/blitz/daily
     python cli.py fetch chesscom:<user> --full         # ignore what's stored, re-download everything
     python cli.py summary chesscom:<user>
+    python cli.py analyze chesscom:<user>              # Stockfish pass over the latest 200 rapid games
+    python cli.py analyze chesscom:<user> --games 500 --depth 14
     python cli.py moves path/to/game.pgn               # sanity check: print a PGN's moves
 """
 
@@ -18,6 +20,7 @@ import sys
 import chess.pgn
 
 from db import store
+from engine.runner import DEFAULT_DEPTH, analyze
 from fetch import http
 from fetch.normalize import parse_pgn_moves
 from fetch.sync import PLATFORMS, sync
@@ -43,6 +46,22 @@ def cmd_fetch(args) -> None:
     label = speed or "all"
     print(f"Done. Read {result.seen}, stored {result.new} new, skipped {result.skipped}. "
           f"{total} {label} games stored for {platform}:{username}.")
+
+
+def cmd_analyze(args) -> None:
+    platform, username = args.target
+    conn = store.connect(args.db)
+    if store.count_games(conn, platform, username) == 0:
+        sys.exit(f"No games stored for {platform}:{username}. Run: python cli.py fetch {platform}:{username}")
+    time_class = None if args.all_speeds else "rapid"
+    try:
+        result = analyze(conn, platform, username, time_class=time_class, limit=args.games,
+                         depth=args.depth, workers=args.workers)
+    except FileNotFoundError as e:
+        sys.exit(str(e))
+    except KeyboardInterrupt:
+        sys.exit("\nStopped. Finished games are saved; run the same command to continue.")
+    print(f"Done. Engine analysed {result['engine']} games, reused Lichess analysis for {result['lichess_reused']}.")
 
 
 def cmd_summary(args) -> None:
@@ -87,6 +106,14 @@ def main(argv=None) -> None:
     p.add_argument("--all-speeds", action="store_true", help="store every time control, not just rapid")
     p.add_argument("--full", action="store_true", help="re-download the whole history")
     p.set_defaults(func=cmd_fetch)
+
+    p = sub.add_parser("analyze", help="run Stockfish over a player's recent games")
+    p.add_argument("target", type=parse_target)
+    p.add_argument("--games", type=int, default=200, help="how many of the most recent games (default 200)")
+    p.add_argument("--depth", type=int, default=DEFAULT_DEPTH, help=f"search depth per position (default {DEFAULT_DEPTH})")
+    p.add_argument("--workers", type=int, default=None, help="Stockfish processes (default: one per CPU core)")
+    p.add_argument("--all-speeds", action="store_true", help="include non-rapid games")
+    p.set_defaults(func=cmd_analyze)
 
     p = sub.add_parser("summary", help="show what is stored for a player")
     p.add_argument("target", type=parse_target)
