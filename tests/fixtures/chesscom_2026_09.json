@@ -1,0 +1,38 @@
+{
+  "games": [
+    {
+      "url": "https://www.chess.com/game/live/150000000001",
+      "pgn": "[Event \"Live Chess\"]\n[Site \"Chess.com\"]\n[Date \"2026.09.03\"]\n[Round \"-\"]\n[White \"AjTest\"]\n[Black \"opponent1\"]\n[Result \"1-0\"]\n[ECO \"C23\"]\n[ECOUrl \"https://www.chess.com/openings/Bishops-Opening-2...Nc6-3.Qh5\"]\n[UTCDate \"2026.09.03\"]\n[UTCTime \"18:20:05\"]\n[WhiteElo \"1210\"]\n[BlackElo \"1195\"]\n[TimeControl \"600\"]\n[Termination \"AjTest won by checkmate\"]\n\n1. e4 {[%clk 0:09:58.1]} 1... e5 {[%clk 0:09:57.4]} 2. Bc4 {[%clk 0:09:55]} 2... Nc6 {[%clk 0:09:50.2]} 3. Qh5 {[%clk 0:09:51.9]} 3... Nf6 {[%clk 0:09:31.6]} 4. Qxf7# {[%clk 0:09:49.5]} 1-0\n",
+      "time_control": "600",
+      "end_time": 1788459800,
+      "rated": true,
+      "uuid": "0f1e2d3c-0000-0000-0000-000000000001",
+      "time_class": "rapid",
+      "rules": "chess",
+      "white": {"rating": 1210, "result": "win", "@id": "https://api.chess.com/pub/player/ajtest", "username": "AjTest"},
+      "black": {"rating": 1195, "result": "checkmated", "@id": "https://api.chess.com/pub/player/opponent1", "username": "opponent1"},
+      "eco": "https://www.chess.com/openings/Bishops-Opening-2...Nc6-3.Qh5"
+    },
+    {
+      "url": "https://www.chess.com/game/live/150000000002",
+      "pgn": "[Event \"Live Chess\"]\n[Site \"Chess.com\"]\n[White \"opponent2\"]\n[Black \"AjTest\"]\n[Result \"1/2-1/2\"]\n[ECO \"A00\"]\n[UTCDate \"2026.09.04\"]\n[UTCTime \"09:00:00\"]\n[WhiteElo \"1300\"]\n[BlackElo \"1205\"]\n[TimeControl \"180+2\"]\n\n1. g3 {[%clk 0:03:01]} 1... d5 {[%clk 0:03:01]} 1/2-1/2\n",
+      "time_control": "180+2",
+      "end_time": 1788512500,
+      "rated": true,
+      "time_class": "blitz",
+      "rules": "chess",
+      "white": {"rating": 1300, "result": "agreed", "username": "opponent2"},
+      "black": {"rating": 1205, "result": "agreed", "username": "AjTest"}
+    },
+    {
+      "url": "https://www.chess.com/game/live/150000000003",
+      "pgn": "[Event \"Live Chess - Chess960\"]\n[Result \"0-1\"]\n\n1-0\n",
+      "time_control": "600",
+      "end_time": 1788520000,
+      "time_class": "rapid",
+      "rules": "chess960",
+      "white": {"rating": 1200, "result": "resigned", "username": "AjTest"},
+      "black": {"rating": 1200, "result": "win", "username": "opponent3"}
+    }
+  ]
+}
