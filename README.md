@@ -1,91 +1,96 @@
 # DownChess
 
-A personal, locally run tool that pulls your Chess.com and Lichess games, analyzes them with Stockfish, and reports your biggest weaknesses with example games. Rapid games are the default focus.
+[![tests](https://github.com/Scr1ble12/DownChess/actions/workflows/tests.yml/badge.svg)](https://github.com/Scr1ble12/DownChess/actions/workflows/tests.yml)
 
-## Status
+**Find out what's actually costing you games.** DownChess pulls every game for a Chess.com or Lichess username, runs Stockfish over them, and reports your three biggest weaknesses with the numbers behind them and example positions from your own games.
 
-| Step | What | State |
+It runs locally: Python, SQLite, Stockfish and a plain white-on-black Streamlit dashboard. Rapid games are the default focus.
+
+| Stats | Top 3 weaknesses |
+| --- | --- |
+| ![Stats page](docs/images/stats.png) | ![Weaknesses page](docs/images/weaknesses.png) |
+
+<sub>Screenshots use generated demo games.</sub>
+
+## What it does
+
+- **Fetches** your full public game history from Chess.com and Lichess into one SQLite file. Reruns only download new games.
+- **Analyses** every move with Stockfish: centipawn loss, a label (ok, inaccuracy, mistake, blunder), the game phase, and a Lichess-style accuracy score. Games Lichess already analysed reuse that analysis.
+- **Summarises** your record by color, opponent rating, opening and month.
+- **Ranks your weaknesses.** Six checks each compare you with a baseline from your own games. The three biggest gaps are shown with example boards: the position before your worst move, your move (dark arrow) and the engine's best move (white arrow).
+
+| Check | You | Compared with |
 | --- | --- | --- |
-| 1 | Fetch and store games from both sites | Done |
-| 2 | Basic stats page | Done |
-| 3 | Engine pass (Stockfish move labels, accuracy) | Done |
-| 4 | Top 3 weaknesses page | Done |
+| Game phase | Avg centipawn loss in your worst phase | The other phases |
+| Openings | Score in your worst opening and color (10+ games) | Your overall score |
+| Time trouble | Blunder rate with under 2 min or 10% of your time left | Blunder rate with more time |
+| Converting wins | Share of games you don't win after reaching +3 | How often opponents fail to win from +3 against you |
+| After a loss | Score in the next game within 2 hours of a loss | Score after a win |
+| Rating gap | Score against opponents 50+ points higher or lower | The Elo-expected score |
 
-## Setup
+A check has to be at least 10% worse than its baseline to count, and every number shows the sample it's based on.
 
-Needs Python 3.11 or newer.
+## Quick start
+
+Needs Python 3.11+ and Stockfish (`brew install stockfish` on macOS, `apt install stockfish` on Debian/Ubuntu).
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
+git clone https://github.com/Scr1ble12/DownChess.git
+cd DownChess
+python3 -m venv .venv
+source .venv/bin/activate            # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
+
+python cli.py fetch chesscom:<username>     # or lichess:<username>
+python cli.py analyze chesscom:<username>   # Stockfish over your latest 200 rapid games
+streamlit run app.py                        # opens the dashboard in your browser
 ```
 
-Install Stockfish for the engine pass (macOS: `brew install stockfish`). If it's somewhere unusual, set `STOCKFISH_PATH`.
+Streamlit keeps its terminal busy, so run other commands in a second terminal tab.
+
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `python cli.py fetch <site>:<user>` | Download games (rapid only). `--all-speeds` for every time control, `--full` to re-download everything. |
+| `python cli.py analyze <site>:<user>` | Run Stockfish. `--games 500` to go further back, `--depth 14` to go deeper, `--workers N` to set processes. Safe to stop with Ctrl+C; the next run continues. |
+| `python cli.py summary <site>:<user>` | Show what's stored, by time control. |
+| `python cli.py moves <file.pgn>` | Print a PGN's moves and clocks. |
 
 Optional environment variables:
 
 | Variable | What it does |
 | --- | --- |
-| `DOWNCHESS_CONTACT` | Contact info (e.g. your email) put in the User-Agent, as both sites ask. Defaults to this repo's URL. |
-| `LICHESS_TOKEN` | A Lichess personal API token. Not needed, but raises the download speed from about 20 to 30 games per second. |
+| `STOCKFISH_PATH` | Path to the Stockfish binary, if it isn't on your `PATH`. |
+| `LICHESS_TOKEN` | A Lichess API token. Not needed, but speeds up downloads from about 20 to 30 games per second. |
+| `DOWNCHESS_CONTACT` | Contact info for the User-Agent both sites ask for. Defaults to this repo's URL. |
+| `DOWNCHESS_DB` | A different SQLite file for the dashboard. Default `data/downchess.db`. |
 
-## Usage
+## How it works
 
-```bash
-python cli.py fetch chesscom:<user>     # rapid games from Chess.com
-python cli.py fetch lichess:<user>      # rapid games from Lichess
-python cli.py summary chesscom:<user>   # what's stored
-python cli.py moves tests/fixtures/sample.pgn   # print a PGN's moves
+```
+fetch (Chess.com / Lichess)  ->  normalize  ->  SQLite  ->  Stockfish pass  ->  stats  ->  Streamlit
 ```
 
-Then run Stockfish over your recent games:
+Each stage reads from and writes to SQLite, so any stage can be rerun on its own.
 
-```bash
-python cli.py analyze chesscom:<user>                # latest 200 rapid games, depth 12
-python cli.py analyze chesscom:<user> --games 500    # go further back
-python cli.py analyze chesscom:<user> --depth 14     # re-analyse deeper
+- **Fetching.** Chess.com serves monthly archives; months already stored are skipped except the newest. Lichess streams NDJSON; only games after the newest stored one are requested. Requests are sequential with a descriptive User-Agent and a one-minute wait on HTTP 429, as both sites ask.
+- **One game format.** Both sites provide a PGN, so moves, clocks (`%clk`) and Lichess evals (`%eval`) all go through one python-chess path in `fetch/normalize.py`. Nothing downstream knows which site a game came from.
+- **Engine pass.** One single-threaded Stockfish per CPU core, each on a different game, which is faster at shallow depth than one multi-threaded engine. Workers only compute; the main process does all writes. The first 8 plies count as opening theory. Results are committed per game, and asking for a greater depth re-queues games.
+- **Move labels.** Centipawn loss is the mover's drop in eval across the move, with evals capped at ±1000: inaccuracy ≥ 50, mistake ≥ 100, blunder ≥ 300. Endgame means at most 13 points of non-pawn material per side. Accuracy uses Lichess's win-percentage formula.
+
+## Project layout
+
 ```
-
-It uses one Stockfish process per CPU core. You can stop it with Ctrl+C at any time; finished games are saved and the next run continues where it left off. Lichess games that Lichess already analysed reuse that analysis instead of running the engine. Each move gets a label (ok, inaccuracy ≥ 50 cp, mistake ≥ 100, blunder ≥ 300), a phase (opening, middlegame, endgame), and an accuracy score using Lichess's formula. The first 8 plies are treated as opening theory and not judged.
-
-Then open the dashboard:
-
-```bash
-streamlit run app.py
+fetch/      chesscom.py, lichess.py, normalize.py, sync.py, http.py
+db/         schema.sql, store.py
+engine/     runner.py (batch Stockfish), classify.py (labels, phase, accuracy)
+stats/      games.py, results.py, analysis.py, weaknesses.py
+ui/         views.py (pages), board.py (board images), text.py (plain-text tables)
+app.py      Streamlit dashboard
+cli.py      fetch / analyze / summary / moves
+tests/      pytest suite with saved site responses (no network needed)
 ```
-
-It's plain white-on-black text: your record, results by color, by opponent rating and by opening, and your rating by month. Pick a player and time control (rapid by default) in the sidebar. Set `DOWNCHESS_DB` to point it at a different database file.
-
-Pick **Top 3 weaknesses** in the sidebar for the report. Each metric compares you with a baseline from your own games:
-
-| Metric | You | Compared with |
-| --- | --- | --- |
-| Phase | Avg cp loss per move in your worst phase | The other phases |
-| Opening | Score in your worst opening + color (10+ games) | Your overall score |
-| Time trouble | Blunder rate with under 2 min or 10% of your time left | Blunder rate with more time |
-| Converting wins | Share of games you don't win after reaching +3 | How often opponents fail to win from +3 against you |
-| After a loss | Score in the next game within 2 hours of a loss | Score after a win |
-| Rating gap | Score vs opponents 50+ points higher or lower | Elo-expected score |
-
-A metric needs to be at least 10% worse than its baseline to count. The three biggest gaps are shown with three example games each: a board before your worst move, with your move (dark arrow) and the engine's best move (white arrow). "All checks" lists every metric with its sample size.
-
-Run `fetch` again any time; it only downloads and stores new games. Flags:
-
-- `--all-speeds` stores bullet, blitz, classical and daily games too.
-- `--full` ignores what's stored and re-downloads the whole history (use this once if you switch to `--all-speeds` after a rapid-only fetch).
-
-Games go into `data/downchess.db` (SQLite, ignored by git). Use `--db path` for a different file.
-
-## How fetching works
-
-| | Chess.com | Lichess |
-| --- | --- | --- |
-| Endpoint | `/pub/player/{user}/games/archives`, then one request per month | `/api/games/user/{user}` streamed as NDJSON |
-| Rerun rule | Months already fetched are skipped, except the newest one (it may have been fetched mid-month) | Only games after the newest stored one (`since`) |
-| Evals | None, Stockfish adds them in Step 3 | Stored when the game was already analysed on Lichess |
-
-Requests are sequential, send a descriptive User-Agent, and wait a minute on HTTP 429. Chess960 and other variants, and unfinished games, are skipped.
 
 ## Tests
 
@@ -93,4 +98,10 @@ Requests are sequential, send a descriptive User-Agent, and wait a minute on HTT
 pytest
 ```
 
-Tests use saved fixture responses, so they don't touch the network.
+The suite uses saved Chess.com and Lichess responses, so it never touches the network. Engine tests run against a real Stockfish when one is installed and are skipped otherwise. GitHub Actions runs everything on each push.
+
+## Ideas for later
+
+- Practice drills built from your own mistakes
+- Tactical motif tagging (forks, pins, hanging pieces)
+- Comparing against players at your rating instead of only against yourself
