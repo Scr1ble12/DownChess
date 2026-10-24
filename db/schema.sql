@@ -67,11 +67,21 @@ CREATE TABLE IF NOT EXISTS evals (
     PRIMARY KEY (game_id, ply, source)
 );
 
+-- One row per game the engine pass has finished, so short games with no
+-- positions past the book still count as done.
+CREATE TABLE IF NOT EXISTS analysed_games (
+    game_id     INTEGER PRIMARY KEY REFERENCES games (id),
+    source      TEXT NOT NULL,              -- 'stockfish' or 'lichess'
+    depth       INTEGER,                    -- NULL for Lichess analysis
+    analysed_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS move_labels (
     game_id INTEGER NOT NULL REFERENCES games (id),
     ply     INTEGER NOT NULL,
     cp_loss INTEGER,
     label   TEXT,                           -- 'ok', 'inaccuracy', 'mistake', 'blunder'
     phase   TEXT,                           -- 'opening', 'middlegame', 'endgame'
+    accuracy REAL,                          -- 0-100, Lichess's per-move formula
     PRIMARY KEY (game_id, ply)
 );

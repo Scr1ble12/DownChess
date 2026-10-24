@@ -12,7 +12,7 @@ import os
 import streamlit as st
 
 from db import store
-from stats import results
+from stats import analysis, results
 from stats.games import player_games, stored_players, time_classes
 from ui.text import table
 
@@ -65,6 +65,17 @@ st.text(
     f"Record   {o['wins']}W {o['draws']}D {o['losses']}L   score {o['score_pct']:.0f}%\n"
     f"Period   {first:%Y-%m-%d} to {last:%Y-%m-%d}"
 )
+
+moves = analysis.player_moves(conn, platform, username, time_class)
+a = analysis.summary(moves)
+if a["games"]:
+    st.text(
+        f"Engine   {a['games']} of {len(games)} games analysed   accuracy {a['accuracy']:.1f}%\n"
+        f"Per game {a['blunders_per_game']:.1f} blunders  {a['mistakes_per_game']:.1f} mistakes  "
+        f"{a['inaccuracies_per_game']:.1f} inaccuracies   (avg cp loss {a['avg_cp_loss']:.0f})"
+    )
+else:
+    st.text(f"Engine   not run yet.  python cli.py analyze {platform}:{username}")
 
 st.subheader("By color")
 st.text(table(results.by_color(games), WDL, "color"))

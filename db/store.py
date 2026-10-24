@@ -21,7 +21,15 @@ def connect(path: str | Path = DEFAULT_DB) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     conn.executescript(SCHEMA.read_text())
+    _migrate(conn)
     return conn
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Bring databases made by older versions up to the current schema."""
+    cols = {r[1] for r in conn.execute("PRAGMA table_info(move_labels)")}
+    if "accuracy" not in cols:  # added in Step 3
+        conn.execute("ALTER TABLE move_labels ADD COLUMN accuracy REAL")
 
 
 def now_iso() -> str:
