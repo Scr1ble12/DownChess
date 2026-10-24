@@ -1,10 +1,10 @@
-# Plain black on white, monospace everywhere.
+# Plain white text on black, monospace everywhere.
 [theme]
-base = "light"
-primaryColor = "#000000"
-backgroundColor = "#FFFFFF"
-secondaryBackgroundColor = "#FFFFFF"
-textColor = "#000000"
+base = "dark"
+primaryColor = "#FFFFFF"
+backgroundColor = "#000000"
+secondaryBackgroundColor = "#000000"
+textColor = "#FFFFFF"
 font = "monospace"
 
 [client]

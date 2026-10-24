@@ -1,7 +1,7 @@
 # app.py
 """DownChess dashboard.  Run with:  streamlit run app.py
 
-Plain black-and-white text by design. Tables are fixed-width text, and the
+Plain white-on-black text by design. Tables are fixed-width text, and the
 only images will be chess boards (added with the weakness report in Step 4).
 """
 
@@ -22,9 +22,10 @@ st.set_page_config(page_title="DownChess", layout="centered")
 # Strip the remaining decoration: no colored header bar, no rounded boxes.
 st.markdown(
     """<style>
-    header[data-testid="stHeader"] {background: #fff;}
-    pre, code, .stText {font-family: monospace; color: #000; background: #fff !important;}
-    hr {border-color: #000;}
+    header[data-testid="stHeader"] {background: #000;}
+    section[data-testid="stSidebar"] {border-right: 1px solid #fff;}
+    pre, code, .stText {font-family: monospace; color: #fff; background: #000 !important;}
+    hr {border-color: #fff;}
     </style>""",
     unsafe_allow_html=True,
 )

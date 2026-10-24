@@ -43,7 +43,7 @@ Then open the dashboard:
 streamlit run app.py
 ```
 
-It's plain black-and-white text: your record, results by color, by opponent rating and by opening, and your rating by month. Pick a player and time control (rapid by default) in the sidebar. Set `DOWNCHESS_DB` to point it at a different database file.
+It's plain white-on-black text: your record, results by color, by opponent rating and by opening, and your rating by month. Pick a player and time control (rapid by default) in the sidebar. Set `DOWNCHESS_DB` to point it at a different database file.
 
 Run `fetch` again any time; it only downloads and stores new games. Flags:
 
