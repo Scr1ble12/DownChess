@@ -2,7 +2,7 @@
 """DownChess dashboard.  Run with:  streamlit run app.py
 
 Plain white-on-black text by design. Tables are fixed-width text, and the
-only images will be chess boards (added with the weakness report in Step 4).
+only images are chess boards on the weaknesses page.
 """
 
 from __future__ import annotations
@@ -12,11 +12,8 @@ import os
 import streamlit as st
 
 from db import store
-from stats import analysis, results
 from stats.games import player_games, stored_players, time_classes
-from ui.text import table
-
-WDL = {"games": ("games", ""), "wins": ("W", ""), "draws": ("D", ""), "losses": ("L", ""), "score_pct": ("score", "pct")}
+from ui import views
 
 st.set_page_config(page_title="DownChess", layout="centered")
 # Strip the remaining decoration: no colored header bar, no rounded boxes.
@@ -26,6 +23,7 @@ st.markdown(
     section[data-testid="stSidebar"] {border-right: 1px solid #fff;}
     pre, code, .stText {font-family: monospace; color: #fff; background: #000 !important;}
     hr {border-color: #fff;}
+    a {color: #fff !important;}
     </style>""",
     unsafe_allow_html=True,
 )
@@ -44,6 +42,7 @@ if not players:
     st.stop()
 
 with st.sidebar:
+    page = st.radio("Page", ["Stats", "Top 3 weaknesses"])
     platform, username = st.selectbox("Player", players, format_func=lambda p: f"{p[0]}:{p[1]}")
     classes = time_classes(conn, platform, username)
     options = classes + ["all"]
@@ -59,39 +58,7 @@ if games.empty:
     st.text("No games for this time control.")
     st.stop()
 
-o = results.overall(games)
-first, last = games["played_at"].min(), games["played_at"].max()
-st.text(
-    f"Record   {o['wins']}W {o['draws']}D {o['losses']}L   score {o['score_pct']:.0f}%\n"
-    f"Period   {first:%Y-%m-%d} to {last:%Y-%m-%d}"
-)
-
-moves = analysis.player_moves(conn, platform, username, time_class)
-a = analysis.summary(moves)
-if a["games"]:
-    st.text(
-        f"Engine   {a['games']} of {len(games)} games analysed   accuracy {a['accuracy']:.1f}%\n"
-        f"Per game {a['blunders_per_game']:.1f} blunders  {a['mistakes_per_game']:.1f} mistakes  "
-        f"{a['inaccuracies_per_game']:.1f} inaccuracies   (avg cp loss {a['avg_cp_loss']:.0f})"
-    )
+if page == "Stats":
+    views.stats_page(conn, platform, username, time_class, games)
 else:
-    st.text(f"Engine   not run yet.  python cli.py analyze {platform}:{username}")
-
-st.subheader("By color")
-st.text(table(results.by_color(games), WDL, "color"))
-
-st.subheader("By opponent rating")
-st.text("Opponent's rating compared with yours at the time.")
-st.text(table(results.by_rating_band(games), WDL, "opponent"))
-
-st.subheader("By opening")
-min_games = st.number_input("Minimum games per opening", min_value=1, value=3, step=1)
-openings = results.by_opening(games, min_games=int(min_games))
-st.text(table(openings, WDL, ["opening", "color"]) if not openings.empty else f"No opening with {min_games}+ games.")
-
-st.subheader("Rating by month")
-st.text(table(
-    results.rating_by_month(games),
-    {"rating": ("rating", ""), "change": ("change", "signed"), "games": ("games", ""), "score_pct": ("score", "pct")},
-    "month",
-))
+    views.weaknesses_page(conn, platform, username, time_class, games)

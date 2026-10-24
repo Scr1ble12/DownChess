@@ -39,3 +39,47 @@ def test_with_games(tmp_path, monkeypatch):
     assert "lichess:me  |  rapid  |  2 games" in text
     assert "Record   1W 0D 1L   score 50%" in text
     assert "white" in text and "within 100" in text and "2026-09" in text
+
+
+def test_weaknesses_page_renders(tmp_path, monkeypatch):
+    import json
+
+    from engine import runner
+    from fetch.normalize import normalize_lichess
+    from tests.fakes import fixture
+
+    db = tmp_path / "w.db"
+    conn = store.connect(db)
+    store.upsert_game(conn, normalize_lichess(json.loads(fixture("lichess_games.ndjson").splitlines()[0])))
+    store.touch_player(conn, "lichess", "AjTest")
+    runner.analyze(conn, "lichess", "AjTest", log=lambda *_: None)  # reuses Lichess evals, no engine
+    conn.commit()
+    conn.close()
+
+    monkeypatch.setenv("DOWNCHESS_DB", str(db))
+    monkeypatch.setitem(sys.modules, "__main__", sys.modules["__main__"])
+    at = AppTest.from_file(APP, default_timeout=30)
+    at.run()
+    at.sidebar.radio[0].set_value("Top 3 weaknesses").run()
+    assert not at.exception
+    text = "\n".join(t.value for t in at.text)
+    assert "All checks" in "\n".join(s.value for s in at.subheader)
+    assert "Nothing stands out" in text or "worse than the baseline" in text
+
+
+def test_board_moment_caption():
+    import json
+
+    from engine import runner
+    from fetch.normalize import normalize_lichess
+    from tests.fakes import fixture
+    from ui.board import render_moment
+
+    conn = store.connect(":memory:")
+    store.upsert_game(conn, normalize_lichess(json.loads(fixture("lichess_games.ndjson").splitlines()[0])))
+    runner.analyze(conn, "lichess", "AjTest", log=lambda *_: None)
+    view = render_moment(conn, 1, 9)  # 5. Nxe5??
+    assert view.svg.startswith("<svg")
+    assert "You played 5. Nxe5 (blunder" in view.caption
+    assert "+0.0 -> -3.5" in view.caption
+    assert view.url == "https://lichess.org/AbCdEfGh"
