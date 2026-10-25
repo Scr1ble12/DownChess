@@ -68,12 +68,15 @@ def _terminal_eval(board: chess.Board) -> tuple[int, int | None]:
     return 0, None  # stalemate, insufficient material
 
 
-def analyse_positions(engine, ucis: list[str], depth: int) -> list[tuple[int, int, int | None, str | None]]:
+def analyse_positions(engine, ucis: list[str], depth: int, progress=None) -> list[tuple[int, int, int | None, str | None]]:
     """Eval of the position after each ply from BOOK_PLIES to the end.
-    Returns [(ply, eval_cp, mate_in, best_move_uci)], White POV."""
+    Returns [(ply, eval_cp, mate_in, best_move_uci)], White POV.
+    `progress(done, total)` is called after each position, if given."""
     board = chess.Board()
     results = []
     for ply in range(len(ucis) + 1):
+        if progress and ply:
+            progress(ply, len(ucis) + 1)
         if ply > 0:
             board.push_uci(ucis[ply - 1])
         if ply < BOOK_PLIES:
