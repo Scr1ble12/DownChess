@@ -2,7 +2,7 @@
 """DownChess dashboard.  Run with:  streamlit run app.py
 
 Plain white-on-black text by design. Tables are fixed-width text, and the
-only images are chess boards on the weaknesses page.
+only images are chess boards (weaknesses and game review pages).
 """
 
 from __future__ import annotations
@@ -14,6 +14,7 @@ import streamlit as st
 from db import store
 from stats.games import player_games, stored_players, time_classes
 from ui import views
+from ui.review import review_page
 
 st.set_page_config(page_title="DownChess", layout="centered")
 # Strip the remaining decoration: no colored header bar, no rounded boxes.
@@ -42,7 +43,7 @@ if not players:
     st.stop()
 
 with st.sidebar:
-    page = st.radio("Page", ["Stats", "Top 3 weaknesses"])
+    page = st.radio("Page", ["Stats", "Top 3 weaknesses", "Game review"])
     platform, username = st.selectbox("Player", players, format_func=lambda p: f"{p[0]}:{p[1]}")
     classes = time_classes(conn, platform, username)
     options = classes + ["all"]
@@ -53,6 +54,10 @@ time_class = None if choice == "all" else choice
 games = player_games(conn, platform, username, time_class)
 
 st.text(f"{platform}:{username}  |  {choice}  |  {len(games)} games")
+
+if page == "Game review":  # also reviews pasted games, so it runs without stored ones
+    review_page(conn, platform, username, games)
+    st.stop()
 
 if games.empty:
     st.text("No games for this time control.")

@@ -17,6 +17,7 @@ It runs locally: Python, SQLite, Stockfish and a plain white-on-black Streamlit 
 - **Fetches** your full public game history from Chess.com and Lichess into one SQLite file. Reruns only download new games.
 - **Analyses** every move with Stockfish: centipawn loss, a label (ok, inaccuracy, mistake, blunder), the game phase, and a Lichess-style accuracy score. Games Lichess already analysed reuse that analysis.
 - **Summarises** your record by color, opponent rating, opening and month.
+- **Reviews any single game** move by move, like Chess.com's Game Review but free and local: your games, a pasted PGN, or a Lichess link.
 - **Ranks your weaknesses.** Six checks each compare you with a baseline from your own games. The three biggest gaps are shown with example boards: the position before your worst move, your move (dark arrow) and the engine's best move (white arrow).
 
 | Check | You | Compared with |
@@ -29,6 +30,17 @@ It runs locally: Python, SQLite, Stockfish and a plain white-on-black Streamlit 
 | Rating gap | Score against opponents 50+ points higher or lower | The Elo-expected score |
 
 A check has to be at least 10% worse than its baseline to count, and every number shows the sample it's based on.
+
+### Game review
+
+A free, local take on Chess.com's Game Review, for any single game. Open **Game review** in the sidebar, then either pick one of your stored games or paste a PGN or game link:
+
+- **Stored games** show their saved analysis straight away. Games the engine pass hasn't reached get an *Analyse* button; the result is saved, so it also counts towards your stats.
+- **Pasted PGNs** (Chess.com: Share > PGN; Lichess: Share & export > PGN) are analysed as soon as you paste them. Lichess links are downloaded for you. Chess.com links work for games you've already fetched, since Chess.com has no public API for one game.
+
+You get each player's accuracy and a count of best, good, book, inaccuracy, mistake and blunder moves, then step through the game on the board: the move played is the dark arrow and Stockfish's choice is the white arrow. *Next error* jumps to your next inaccuracy, mistake or blunder. A key-moments table and the full move list sit underneath. Raise *Engine depth* for a slower, stronger review.
+
+<img src="docs/images/review.png" alt="Game review page" width="480">
 
 ## Quick start
 
@@ -84,9 +96,9 @@ Each stage reads from and writes to SQLite, so any stage can be rerun on its own
 ```
 fetch/      chesscom.py, lichess.py, normalize.py, sync.py, http.py
 db/         schema.sql, store.py
-engine/     runner.py (batch Stockfish), classify.py (labels, phase, accuracy)
+engine/     runner.py (batch Stockfish), classify.py (labels, phase, accuracy), review.py (single-game review)
 stats/      games.py, results.py, analysis.py, weaknesses.py
-ui/         views.py (pages), board.py (board images), text.py (plain-text tables)
+ui/         views.py (pages), review.py (game review page), board.py (board images), text.py (plain-text tables)
 app.py      Streamlit dashboard
 cli.py      fetch / analyze / summary / moves
 tests/      pytest suite with saved site responses (no network needed)

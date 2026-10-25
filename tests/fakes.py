@@ -15,6 +15,10 @@ class FakeResponse:
         self._body = body if isinstance(body, bytes) else body.encode()
         self.headers = headers or {}
 
+    @property
+    def text(self):
+        return self._body.decode()
+
     def json(self):
         return json.loads(self._body)
 
