@@ -1,0 +1,63 @@
+name: desktop app
+
+# Builds the DownChess installers with the official Stockfish bundled.
+# Every push and PR uploads them as workflow artifacts; pushing a tag like
+# v1.0.0 also publishes them on the repo's Releases page.
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-15, arch: arm64, flags: --mac --arm64 }
+          - { os: macos-15-intel, arch: x64, flags: --mac --x64 }
+          - { os: windows-latest, arch: x64, flags: --win --x64 }
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: node scripts/get-stockfish.mjs --arch ${{ matrix.arch }}
+      - run: npm test
+      - run: npx electron-builder ${{ matrix.flags }} --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: DownChess-${{ matrix.os }}-${{ matrix.arch }}
+          path: |
+            app/dist/*.dmg
+            app/dist/*.exe
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: installers
+          merge-multiple: true
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" installers/* --repo "$GITHUB_REPOSITORY" --title "DownChess $GITHUB_REF_NAME" --notes "Download the .dmg for your Mac (arm64 = Apple silicon, x64 = Intel) or the .exe for Windows."

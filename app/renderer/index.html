@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:">
+  <title>DownChess</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>DownChess</h1>
+    <nav>
+      <button data-page="games" class="active">Games</button>
+      <button data-page="stats">Stats</button>
+      <button data-page="weaknesses">Top 3 weaknesses</button>
+      <button data-page="review">Game review</button>
+    </nav>
+    <div id="filters">
+      <label>Player <select id="player"></select></label>
+      <label>Time control <select id="time-class"></select></label>
+    </div>
+  </header>
+
+  <main>
+    <section id="page-games" class="page">
+      <h2>Download games</h2>
+      <div class="form">
+        <label>Site
+          <select id="dl-site"><option value="chesscom">Chess.com</option><option value="lichess">Lichess</option></select>
+        </label>
+        <label>Username <input id="dl-user" type="text" autocomplete="off" spellcheck="false" placeholder="your username"></label>
+        <label>From <input id="dl-from" type="date"></label>
+        <label>To <input id="dl-to" type="date"></label>
+        <div class="quick">
+          <button data-range="3">Last 3 months</button>
+          <button data-range="12">Last year</button>
+          <button data-range="all">All time</button>
+        </div>
+        <label>Time control
+          <select id="dl-speed">
+            <option value="rapid">rapid</option><option value="blitz">blitz</option><option value="bullet">bullet</option>
+            <option value="classical">classical</option><option value="daily">daily</option><option value="">all</option>
+          </select>
+        </label>
+        <div class="buttons"><button id="dl-go" class="primary">Download</button><button id="dl-stop" disabled>Stop</button></div>
+      </div>
+      <pre id="dl-log"></pre>
+
+      <h2>Analyse with Stockfish</h2>
+      <p>Runs Stockfish over the selected player's most recent games that haven't been analysed yet. You can stop at any time; finished games are kept.</p>
+      <div class="form">
+        <label>Games <input id="an-games" type="number" min="1" value="200"></label>
+        <label>Depth <input id="an-depth" type="number" min="6" max="24" value="12"></label>
+        <div class="buttons"><button id="an-go" class="primary">Analyse</button><button id="an-stop" disabled>Stop</button></div>
+      </div>
+      <pre id="an-log"></pre>
+
+      <h2>Stored</h2>
+      <pre id="stored"></pre>
+      <div id="stored-actions"></div>
+    </section>
+
+    <section id="page-stats" class="page" hidden></section>
+    <section id="page-weaknesses" class="page" hidden></section>
+
+    <section id="page-review" class="page" hidden>
+      <div class="form">
+        <label class="wide">Game <select id="rv-game"></select></label>
+        <label class="wide">Or paste a PGN, or a Lichess / Chess.com game link
+          <textarea id="rv-paste" rows="3" spellcheck="false" placeholder="Chess.com: open the game, Share > PGN, copy. Lichess: paste the game link."></textarea>
+        </label>
+        <div class="buttons"><button id="rv-load">Load pasted game</button></div>
+        <label>Depth <input id="rv-depth" type="number" min="6" max="24" value="14"></label>
+      </div>
+      <div id="rv-body"></div>
+    </section>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

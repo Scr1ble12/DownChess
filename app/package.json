@@ -1,0 +1,67 @@
+{
+  "name": "downchess",
+  "productName": "DownChess",
+  "version": "1.0.0",
+  "description": "Find out what's costing you chess games: download your Chess.com or Lichess games, run Stockfish over them, and see your top 3 weaknesses.",
+  "author": "Scr1ble12",
+  "type": "module",
+  "main": "main.cjs",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "stockfish": "node scripts/get-stockfish.mjs",
+    "test": "node --test test/*.test.mjs",
+    "dist": "electron-builder --publish never"
+  },
+  "devDependencies": {
+    "electron": "44.9.0",
+    "electron-builder": "26.17.0"
+  },
+  "build": {
+    "appId": "io.github.scr1ble12.downchess",
+    "productName": "DownChess",
+    "files": [
+      "main.cjs",
+      "preload.cjs",
+      "renderer/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "stockfish",
+        "to": "stockfish"
+      }
+    ],
+    "mac": {
+      "category": "public.app-category.games",
+      "target": [
+        "dmg"
+      ],
+      "identity": null,
+      "artifactName": "DownChess-${version}-mac-${arch}.${ext}"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "artifactName": "DownChess-${version}-windows-setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Game",
+      "artifactName": "DownChess-${version}-linux.${ext}"
+    },
+    "afterPack": "scripts/adhoc-sign.cjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Scr1ble12/DownChess.git"
+  },
+  "homepage": "https://github.com/Scr1ble12/DownChess"
+}

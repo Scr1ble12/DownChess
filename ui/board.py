@@ -80,3 +80,15 @@ def render_moment(conn: sqlite3.Connection, game_id: int, ply: int, size: int = 
     if best_san:
         lines.append(f"Best was {best_san} (white arrow). Your move is the dark arrow.")
     return MomentView(svg=svg, caption="\n".join(lines), url=m["url"])
+
+
+def render_position(board: chess.Board, played: chess.Move | None, best: chess.Move | None,
+                    orientation: chess.Color, size: int = 400) -> str:
+    """`board` after `played`; the played move as a dark arrow and the engine's
+    choice in the position before as a white arrow, when they differ."""
+    arrows = []
+    if played:
+        arrows.append(chess.svg.Arrow(played.from_square, played.to_square, color=PLAYED_ARROW))
+    if best and best != played:
+        arrows.append(chess.svg.Arrow(best.from_square, best.to_square, color=BEST_ARROW))
+    return chess.svg.board(board, orientation=orientation, arrows=arrows, size=size, colors=COLORS, coordinates=True)
