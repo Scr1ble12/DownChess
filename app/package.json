@@ -37,7 +37,7 @@
       "target": [
         "dmg"
       ],
-      "identity": "-",
+      "identity": null,
       "artifactName": "DownChess-${version}-mac-${arch}.${ext}"
     },
     "win": {
@@ -56,7 +56,8 @@
       ],
       "category": "Game",
       "artifactName": "DownChess-${version}-linux.${ext}"
-    }
+    },
+    "afterPack": "scripts/adhoc-sign.cjs"
   },
   "repository": {
     "type": "git",
